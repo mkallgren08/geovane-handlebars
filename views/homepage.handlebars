@@ -1,0 +1,33 @@
+{{>navPanel}}
+<div class="mainbody">
+  <div class="maincontent">
+    <!-- ABOUT ME -->
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">
+        </h3>
+      </div>
+
+
+      <div class="panel-body">
+        <div>
+
+
+          <div>
+            <form action="/maps">
+              <input type="text" name="start" placeholder="Starting Location" id="start-loc">
+              <input type="text" name="end" placeholder="Ending Location" id="end-loc">
+              <input type="submit" val="Submit" id="find-directions">
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {{>connect}}
+
+</div>
+{{>footer}}

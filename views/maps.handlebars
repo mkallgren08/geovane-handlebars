@@ -1,0 +1,31 @@
+{{>navPanel}}
+<h2>Map</h2>
+<div id="map" style = "height:800px; width:800px"></div>
+
+<code>
+    {{{results}}}
+    
+</code>
+<br/>
+<code>
+    {{{latlng}}}
+</code>
+<br/>
+<code>
+    {{{directions}}}
+</code>
+
+<br/>
+<h2>googleClient</h2>
+<code>
+    {{{googleClient}}}
+</code>
+<iframe width="600" height="450" src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&origin=Oslo+Norway&destination=Telemark+Norway&avoid=tolls|highways"
+    frameborder="0" style="border:0">
+
+
+
+</iframe>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&callback=initMap">
+</script>
