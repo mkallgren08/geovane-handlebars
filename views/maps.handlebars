@@ -1,25 +1,42 @@
 {{>navPanel}}
 <h2>Map</h2>
+<div>
+<strong>Mode of Travel: </strong>
+<select id="mode">
+  <option value="DRIVING">Driving</option>
+  <option value="WALKING">Walking</option>
+  <option value="BICYCLING">Bicycling</option>
+  <option value="TRANSIT">Transit</option>
+</select>
+</div>
+
+    <div id="floating-panel">
+    <b>Start: </b>
+    <input type="text" id="restart" placeholder="Starting Location">
+    <b>End: </b>
+    <input type="text" id="reend" placeholder="Ending Location">
+    <button id = "reroute">Submit</button>
+    </div>
 <div id="map" style = "height:800px; width:800px"></div>
 
-<code>
+{{!-- <code>
     {{{results}}}
     
-</code>
+</code> --}}
 <br/>
-<code>
+{{!-- <code>
     {{{latlng}}}
-</code>
+</code> --}}
 <br/>
-<code>
+{{!-- <code>
     {{{directions}}}
-</code>
+</code> --}}
 
 <br/>
 <h2>googleClient</h2>
-<code>
+{{!-- <code>
     {{{googleClient}}}
-</code>
+</code> --}}
 <iframe width="600" height="450" src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&origin=Oslo+Norway&destination=Telemark+Norway&avoid=tolls|highways"
     frameborder="0" style="border:0">
 
