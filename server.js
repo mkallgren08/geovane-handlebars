@@ -111,7 +111,8 @@ app.get('/', function (req, res) {
 
 app.get('/maps', function (req, res) {
   console.log(req.query)
-  console.log(googleMapsClient.directions)
+  let query = req.query
+  //console.log(googleMapsClient.directions)
 
   let hbsObject = {
     title: "Route Display",
@@ -136,8 +137,8 @@ app.get('/maps', function (req, res) {
   //   // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
   //   // Geocode an address.
     googleMapsClient.directions({
-      origin: "75 9th Ave, New York, NY",
-      destination: "MetLife Stadium Dr East Rutherford, NJ 07073",
+      origin: query.start,
+      destination: query.end,
       mode: "driving",
     }, function (err, response) {
       if (err) {
@@ -147,7 +148,8 @@ app.get('/maps', function (req, res) {
       let directionResults = response.json
       //console.log(directionResults)
       hbsObject.directions = JSON.stringify(directionResults,null,2);
-      hbsObject.googleClient = JSON.stringify(googleMapsClient,null,2)
+      hbsObject.googleClient = JSON.stringify(googleMapsClient,null,2);
+      hbsObject.query = query;
       //console.log(hbsObject)
       //console.log(JSON.stringify(mapResults, null, 2))
       // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
