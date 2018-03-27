@@ -1,37 +1,33 @@
 //console.log(window.document)
 
 $(document).ready(function () {
-    console.log("Directions: " + JSON.stringify(passedData.directions,null,2));
-    // console.log(passedData.query)
+    $("#find-directions").on('click', function (event) {
+        event.preventDefault();
+        console.log('click heard!')
 
-    // $("#find-directions").on('click', function () {
-    //     event.preventDefault();
+        let startPlace = $("#start-loc").val().trim();
+        let endPlace = $("#end-loc").val().trim();
 
-    //     let startPlace = $("#start-loc").val().trim();
-    //     let endPlace = $("#end-loc").val().trim();
+        console.log(startPlace);
+        console.log(endPlace);
 
-    //     console.log(startPlace);
-    //     console.log(endPlace);
-
-    //     if (!startPlace||!endPlace){
-    //         alert("Error!")
-    //         return;
-    //     } else {
-    //         let sentData = {
-    //             start: startPlace,
-    //             end: endPlace,
-    //         }
+        if (!startPlace||!endPlace){
+            alert("Error!")
+            return;
+        } else {
+            let sentData = {
+                start: startPlace,
+                end: endPlace,
+            }
     
-    //         // $.ajax({
-    //         //     type: "GET",
-    //         //     url: "/maps",
-    //         //     //data: sentData,
-    //         // }).then(function (res) {
-    //         //     //console.log(res)
-    //         // })
-    //     }
+            $.ajax({
+                type: "GET",
+                url: "/maps",
+                data: sentData,
+            })
+        }
 
-    // })
+    })
 });
 
 // initMap()
@@ -39,34 +35,6 @@ $(document).ready(function () {
 //=========================================
 //       FUNCTIONS
 //=========================================
-
-let findDirections = function (){
-    event.preventDefault();
-
-    let startPlace = $("#start-loc").val().trim();
-    let endPlace = $("#end-loc").val().trim();
-
-    console.log(startPlace);
-    console.log(endPlace);
-
-    if (!startPlace||!endPlace){
-        alert("Error!")
-        return;
-    } else {
-        let sentData = {
-            start: startPlace,
-            end: endPlace,
-        }
-        console.log("Good data!")
-        // $.ajax({
-        //     type: "GET",
-        //     url: "/maps",
-        //     //data: sentData,
-        // }).then(function (res) {
-        //     //console.log(res)
-        // })
-    }
-}
 
 
 let addEvent = function (object, type, callback) {
