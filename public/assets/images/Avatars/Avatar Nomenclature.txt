@@ -1,0 +1,28 @@
+od = overcast day, for use with drizzle, light rain, and mist; IDs  520, 804
+	
+odhw = overcast day with warning, for use with high wind days, dust storms, 
+	smoke, IDS 711, 721, 731, 441, 751, 761, 762, 771, 781, 900, 905
+
+fr = freezing rain IDs 511
+frhw = freezing rain with warning
+
+hs = heavy snow, for use with IDs 602, 622
+hshw = heavy snow with warning, for use with IDs 602, 622 ( ex: when wind is 
+	high and/or temps are below -10C for ex.)
+
+
+r = rain, IDS 500, 501, 502, 503, 520, 521 
+
+rhw = bad weather asscociated with rain (hail, hurricanes, ) and HEAVY rain
+	 IDS 502, 503, 504, 522, 901, 902, 906
+
+sc = scattered clouds, IDS 802, 803, 801
+
+cs = clear sky, ID = 800
+csht = clear sky and high temps (>100F), ID = 800 && Temp > 310.5K
+
+ts = thunderstorm, IDS 200, 201,210, 211, 221, 230, 231, 232 
+tshw = thunderstorm and hazard (heavy rain, heavy thunderstorm), IDS:202, 212
+
+sn = snow, IDs 600, 601, 611, 612, 620, 621
+snhw = snow with hazard (very low temps, sleet, rain and snow) 615, 616

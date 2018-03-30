@@ -1,6 +1,11 @@
 {{>navPanel}}
 <div class="mainbody">
   <div class="maincontent">
+    {{#if alert}}
+    <h2>{{alert}}</h2>
+    {{else}}
+    <h2>No alert to show! :)</h2>
+    {{/if}}
     <!-- ABOUT ME -->
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -11,14 +16,12 @@
 
       <div class="panel-body">
         <div>
-
-
           <div>
-            
+            <form action="/maps" method = "GET">
               <input type="text" name="start" placeholder="Starting Location" id="start-loc">
               <input type="text" name="end" placeholder="Ending Location" id="end-loc">
-              <button type="submit"  id="find-directions">Submit</button>
-            
+              <input type="submit" val="Submit" id="find-directions">
+            </form>
 
           </div>
         </div>
@@ -27,7 +30,15 @@
     </div>
   </div>
 
+  <code>
+    {{{route}}}
+  </code>
+
   {{>connect}}
 
 </div>
 {{>footer}}
+
+<script>
+
+</script>

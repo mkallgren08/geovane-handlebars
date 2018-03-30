@@ -50,10 +50,12 @@
     }
 
     console.log(passedData)
+    console.log(passedData.directions.routes[0].legs)
     
     
 </script>
+<script src = "./mapDisplay.js"></script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&callback=initMap">
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&callback=initMap&libraries=places">
 </script>
 

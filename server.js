@@ -103,7 +103,7 @@ app.get('/', function (req, res) {
   let hbsObject = {
     title: "Homepage - Michael Kallgren",
     homepage: 'active',
-    results: res
+    results: res,
   }
   // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
   res.render("homepage.handlebars", hbsObject);
@@ -113,13 +113,51 @@ app.get('/maps', function (req, res) {
   console.log(req.query)
   let query = req.query
   //console.log(googleMapsClient.directions)
-
   let hbsObject = {
     title: "Route Display",
     homepage: 'active',
   }
 
   let mapResults;
+
+
+  if (!query.start || !query.end) {
+    let routeStEn = {
+      start: query.start,
+      end: query.end
+    }
+
+    let alertMsg = "Please make sure to enter a valid location for both a start and end location!"
+    
+    let hbsObject = {
+      title: "Route Display",
+      homepage: 'active',
+      alert: alertMsg,
+      route: routeStEn,
+    }
+    res.render("homepage", hbsObject)
+  } else {
+    googleMapsClient.directions({
+      origin: query.start,
+      destination: query.end,
+      mode: "driving",
+    }, function (err, response) {
+      if (err) {
+        console.log("Error: " + JSON.stringify(err, null, 2));
+      }
+
+      let directionResults = response.json
+      //console.log(directionResults)
+      hbsObject.directions = JSON.stringify(directionResults, null, 2);
+      hbsObject.query = query;
+      //console.log(hbsObject)
+      //console.log(JSON.stringify(mapResults, null, 2))
+      // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
+      res.render("maps", hbsObject)
+    });
+  }
+
+
 
   // Geocode an address.
   // googleMapsClient.geocode({
@@ -133,28 +171,9 @@ app.get('/maps', function (req, res) {
   //   //console.log(JSON.stringify(mapResults, null, 2))
   //   hbsObject.results=  JSON.stringify(mapResults, null, 2);
   //   hbsObjects.latlng= JSON.stringify(latilongi, null, 2),
-    
+
   //   // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
   //   // Geocode an address.
-    googleMapsClient.directions({
-      origin: query.start,
-      destination: query.end,
-      mode: "driving",
-    }, function (err, response) {
-      if (err) {
-        console.log("Error: " + JSON.stringify(err, null, 2));
-      }
-
-      let directionResults = response.json
-      //console.log(directionResults)
-      hbsObject.directions = JSON.stringify(directionResults,null,2);
-      hbsObject.googleClient = JSON.stringify(googleMapsClient,null,2);
-      hbsObject.query = query;
-      //console.log(hbsObject)
-      //console.log(JSON.stringify(mapResults, null, 2))
-      // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
-      res.render("maps", hbsObject)
-    });
   // });
 
 
@@ -198,8 +217,8 @@ testmap = (hbsObject) => {
   $.ajax({
     method: 'GET',
     url: "https://www.google.com/maps/embed/v1/directions?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&origin=Oslo+Norway&destination=Telemark+Norway&avoid=tolls|highways"
-  }).then(function(err, res){
-    console.log(JSON.stringify(res,null,2))
+  }).then(function (err, res) {
+    console.log(JSON.stringify(res, null, 2))
     hbsObject.src = ""
     res.render("maps", hbsObject);
   })
