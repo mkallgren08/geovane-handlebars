@@ -16,7 +16,7 @@ let legs = passedData.directions.routes[0].legs[0]
 
 function initMap() {
     var directionsService = new google.maps.DirectionsService;
-    var directionsDisplay = new google.maps.DirectionsRenderer;
+    var directionsDisplay = new google.maps.DirectionsRenderer({suppressMarkers: true});
     var selectedMode = $('#mode').val();
     let mapOrigin;
 
@@ -29,8 +29,9 @@ function initMap() {
 
     //console.log(selectedMode);
     map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 7,
-        center: { lat: 52.1429, lng: 4.4012 }
+        zoom: 1,
+        center: { lat: 0, lng: 0 },
+        gestureHandling: 'cooperative'
     });
 
     console.log("First instance of map:" + map);
@@ -83,7 +84,6 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
     // creates an array of locations for weather calls
     //------------------------------------------------
     weatherInfo = [];
-    markers = [];
     let locations = [];
 
     //console.log(markers);
@@ -127,17 +127,17 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
             //console.log(locations)
             for (var j = 0; j < locations.length; j++) {
-                weatherMapsAPICall(locations[j].lat, locations[j].lng)
+                weatherMapsAPICall(locations[j].lat, locations[j].lng, map)
             }
 
             //console.log('Weather Results:')
             ///console.log(weatherInfo)
 
-            let halfway = Math.floor((steps.length) / 2);
-            let midpoint = steps[halfway].end_location
-            //console.log("markers: ")
-            addMarker(midpoint, map)
-            // //console.log(markers)
+            // let halfway = Math.floor((steps.length) / 2);
+            // let midpoint = steps[halfway].end_location
+            // //console.log("markers: ")
+            // addMarker(midpoint, map)
+            // // //console.log(markers)
 
 
         } else {
@@ -161,21 +161,22 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
         }
 
-        function addWeatherMarkers(map, weatherRes) {
+        function addWeatherMarkers(weatherRes, map) {
+            //console.log("Weather Results: " + JSON.stringify(weatherRes,null,2))
             let lat = weatherRes.coord.lat;
             let lng = weatherRes.coord.lon;
 
-            var iconcode = weatherRes.weather.icon;
+            var iconcode = weatherRes.weather[0].icon;
             var location = new google.maps.LatLng(lat,lng)
 
             var marker = new google.maps.Marker({
                 position: location,
                 map: map,
-                // icon: "http://openweathermap.org/img/w/+" + iconcode + ".png"
+                icon: "http://openweathermap.org/img/w/" + iconcode + ".png"
             });
             markers.push(marker);
             marker.setMap(map)
-            console.log(markers)
+            console.log("Markers: " + markers)
 
         }
 
@@ -185,10 +186,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 markers[i].setMap(map);
                 //console.log(markers[i].map)
             }
+            console.log("Old markers should all disappear here")
+            console.log("Markers: " + markers)
+            console.log("Now clearing the marker array")
+            markers = [];
+            console.log("Markers: " + markers)
         }
 
         // Removes the markers from the map, but keeps them in the array.
         function clearMarkers() {
+            console.log('Setting all markers to map "null"')
             setMapOnAll(null);
         }
 
@@ -199,8 +206,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
         // Deletes all markers in the array by removing references to them.
         function deleteMarkers() {
+            console.log("Delete function called on markers!")
             clearMarkers();
-            markers = [];
         }
 
         // ====================================
@@ -235,8 +242,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 console.log(location);
 
 
-                //addWeatherMarkers(map, response)
-                addMarker(location,map)
+                addWeatherMarkers(response, map)
+                //addMarker(location,map)
 
             });
         };
