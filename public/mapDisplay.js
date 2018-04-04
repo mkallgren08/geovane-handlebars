@@ -20,6 +20,12 @@ function initMap() {
     var selectedMode = $('#mode').val();
     let mapOrigin;
 
+    let input1 = document.getElementById('restart');
+    let input2 = document.getElementById('reend')
+
+    let autoStart =  new google.maps.places.Autocomplete(input1)
+    let autoEnd =  new google.maps.places.Autocomplete(input2)
+
     let reStart = document.getElementById('restart').value
     let reEnd = document.getElementById('reend').value
     let routeStart = legs.start_address;
@@ -57,9 +63,9 @@ function initMap() {
 
     var onvalChange = function () {
         reStart = document.getElementById('restart').value
-        //console.log(reStart)
+        console.log(reStart)
         reEnd = document.getElementById('reend').value
-        //console.log(reEnd)
+        console.log(reEnd)
 
     }
 
@@ -68,7 +74,9 @@ function initMap() {
     document.getElementById('mode').addEventListener('change', onChangeHandler);
 
     $('#reroute').on('click', function () {
-        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map)
+        //we call onvalChange here to grab the auto-completed values located in the input boxes.
+        onvalChange();
+        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map);
     });
 }
 // array of markers for the map
@@ -76,9 +84,9 @@ let markers = [];
 let weatherInfo = [];
 
 function calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, start, end, map) {
-    //console.log('SelectedMode: ' + selectedMode);
-    // console.log('Start: ' + start);
-    // console.log('End: ' + end)
+    console.log('SelectedMode: ' + selectedMode);
+    console.log('Start: ' + start);
+    console.log('End: ' + end)
 
     //------------------------------------------------
     // creates an array of locations for weather calls
@@ -95,6 +103,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
         travelMode: selectedMode
     }, function (response, status) {
         if (status === 'OK') {
+            // set a boolean for checking if the final location's weather is placed on map
+            let finalDest = false;
             //console.log("markers (before delete): " + markers)
             if (selectedMode !== 'DRIVING' || !selectedMode) {
                 $('#mode').val(selectedMode);
@@ -111,7 +121,35 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             let steps = response.routes[0].legs[0].steps;
             console.log(steps)
             for (var i = 0; i < steps.length; i++) {
-                if (steps[i].distance.value > 8000) {
+                // gets the weather at the starting location
+                if (i===0) {
+                    let location = {};
+                    let lat = steps[i].start_location.lat()
+                    //console.log(lat)
+                    location.lat = lat;
+
+                    let lng = steps[i].start_location.lng()
+                    //console.log(lng)
+                    location.lng = lng;
+
+                    locations.push(location)
+                }
+
+                // gets the weather at the end location
+                if (i===(steps.length-1)){
+                    let location = {};
+                    let lat = steps[i].start_location.lat()
+                    //console.log(lat)
+                    location.lat = lat;
+
+                    let lng = steps[i].start_location.lng()
+                    //console.log(lng)
+                    location.lng = lng;
+
+                    locations.push(location)
+                }
+
+                if (steps[i].distance.value > 10000 && i!==(steps.length-1)) {
                     let location = {};
                     let lat = steps[i].end_location.lat()
                     //console.log(lat)
@@ -122,6 +160,32 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     location.lng = lng;
 
                     locations.push(location)
+                } 
+                
+                if (steps[i].distance.value > 24000 && i !== 0) {
+                    // find the coordinal midpoint between the step's start and end location to do a weather search
+                    let midpoint ={};
+
+                    // define the final and origin latitudes
+                    let latf =  steps[i].end_location.lat();
+                    let lato =  steps[i].start_location.lat();
+
+                    // calculate latitude midpoint
+                    let latm = (latf+lato)/2
+                    console.log("Midpoint lat: " + latm)
+
+                    // define the final and origin longitudes
+                    let lngf = steps[i].end_location.lng();
+                    let lngo =  steps[i].start_location.lng();
+
+                    // calculate longitude midpoint
+                    let lngm = (lngf+lngo)/2
+                    console.log("Midpoint lng: " + lngm)
+
+                    midpoint.lat = latm;
+                    midpoint.lng = lngm;
+
+                    locations.push(midpoint)
                 }
             }
 
@@ -252,7 +316,23 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
 };
 
-var promiseArr = [];
+let tableManager = {
+    createRow: function(data){
+        let mainTable = $('#directionsText')
+
+    },
+    createCell: function (data) {
+        let newCell = $('<td>');
+        // newCell.
+        
+    },
+    updateCell: function (data){
+
+    },
+    clearTable: function(){
+        let mainTable = $('#directionsText').remove();
+    }
+}
 
 
 

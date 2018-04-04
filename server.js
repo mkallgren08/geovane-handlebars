@@ -150,6 +150,7 @@ app.get('/maps', function (req, res) {
       //console.log(directionResults)
       hbsObject.directions = JSON.stringify(directionResults, null, 2);
       hbsObject.query = query;
+      hbsObject.steps = JSON.stringify(directionResults.routes[0].legs[0].steps, null, 2);
       //console.log(hbsObject)
       //console.log(JSON.stringify(mapResults, null, 2))
       // console.log("hbsObj for rendering: " + JSON.stringify(hbsObject), null, 2);
