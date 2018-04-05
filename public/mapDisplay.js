@@ -111,7 +111,11 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             } else {
                 $('#mode').val("DRIVING");
             }
-
+            if ($("#directionsText")){
+                console.log("I can communicate with the directions table!")
+            } else {
+                console.log("I can't communicate with the directions table :(")
+            }
             deleteMarkers()
             //console.log("markers (after delete): " + markers)
             //console.log(response);
@@ -193,15 +197,6 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             for (var j = 0; j < locations.length; j++) {
                 weatherMapsAPICall(locations[j].lat, locations[j].lng, map)
             }
-
-            //console.log('Weather Results:')
-            ///console.log(weatherInfo)
-
-            // let halfway = Math.floor((steps.length) / 2);
-            // let midpoint = steps[halfway].end_location
-            // //console.log("markers: ")
-            // addMarker(midpoint, map)
-            // // //console.log(markers)
 
 
         } else {
