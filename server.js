@@ -33,7 +33,7 @@ const port = process.env.PORT || 4000;
 app.engine('handlebars', exphbs({ defaultLayout: 'main' }));
 app.set('view engine', 'handlebars');
 
-// Serve static content for the app from the "public" directory in the application directory.
+// Serve static content (i.e. css, js, etc) for the app from the "public" directory in the application directory.
 app.use(express.static("public"));
 
 //Use body-parser and morgan with the app

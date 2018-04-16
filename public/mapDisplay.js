@@ -1,3 +1,5 @@
+import { error } from "util";
+
 var map;
 
 $(document).ready(function () {
@@ -16,15 +18,15 @@ let legs = passedData.directions.routes[0].legs[0]
 
 function initMap() {
     var directionsService = new google.maps.DirectionsService;
-    var directionsDisplay = new google.maps.DirectionsRenderer({suppressMarkers: true});
+    var directionsDisplay = new google.maps.DirectionsRenderer({ suppressMarkers: true });
     var selectedMode = $('#mode').val();
     let mapOrigin;
 
     let input1 = document.getElementById('restart');
     let input2 = document.getElementById('reend')
 
-    let autoStart =  new google.maps.places.Autocomplete(input1)
-    let autoEnd =  new google.maps.places.Autocomplete(input2)
+    let autoStart = new google.maps.places.Autocomplete(input1)
+    let autoEnd = new google.maps.places.Autocomplete(input2)
 
     let reStart = document.getElementById('restart').value
     let reEnd = document.getElementById('reend').value
@@ -111,7 +113,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             } else {
                 $('#mode').val("DRIVING");
             }
-            if ($("#directionsText")){
+            if ($("#directionsText")) {
                 console.log("I can communicate with the directions table!")
             } else {
                 console.log("I can't communicate with the directions table :(")
@@ -120,13 +122,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             //console.log("markers (after delete): " + markers)
             //console.log(response);
             directionsDisplay.setDirections(response);
-            console.log(response)
+            //console.log(response)
             // This assembles the array of locations to pass to our OpenWeatherMap API to get the weather!
             let steps = response.routes[0].legs[0].steps;
             console.log(steps)
             for (var i = 0; i < steps.length; i++) {
+                //console.log("Step for directions: " + JSON.stringify(steps[i], null, 2));
+                // prints out a table of results
+                tableManager.createRow(steps[i], i)
                 // gets the weather at the starting location
-                if (i===0) {
+                if (i === 0) {
                     let location = {};
                     let lat = steps[i].start_location.lat()
                     //console.log(lat)
@@ -140,7 +145,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 }
 
                 // gets the weather at the end location
-                if (i===(steps.length-1)){
+                if (i === (steps.length - 1)) {
                     let location = {};
                     let lat = steps[i].start_location.lat()
                     //console.log(lat)
@@ -153,7 +158,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     locations.push(location)
                 }
 
-                if (steps[i].distance.value > 10000 && i!==(steps.length-1)) {
+                if (steps[i].distance.value > 10000 && i !== (steps.length - 1)) {
                     let location = {};
                     let lat = steps[i].end_location.lat()
                     //console.log(lat)
@@ -164,27 +169,27 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     location.lng = lng;
 
                     locations.push(location)
-                } 
-                
+                }
+
                 if (steps[i].distance.value > 24000 && i !== 0) {
                     // find the coordinal midpoint between the step's start and end location to do a weather search
-                    let midpoint ={};
+                    let midpoint = {};
 
                     // define the final and origin latitudes
-                    let latf =  steps[i].end_location.lat();
-                    let lato =  steps[i].start_location.lat();
+                    let latf = steps[i].end_location.lat();
+                    let lato = steps[i].start_location.lat();
 
                     // calculate latitude midpoint
-                    let latm = (latf+lato)/2
-                    console.log("Midpoint lat: " + latm)
+                    let latm = (latf + lato) / 2
+                    //console.log("Midpoint lat: " + latm)
 
                     // define the final and origin longitudes
                     let lngf = steps[i].end_location.lng();
-                    let lngo =  steps[i].start_location.lng();
+                    let lngo = steps[i].start_location.lng();
 
                     // calculate longitude midpoint
-                    let lngm = (lngf+lngo)/2
-                    console.log("Midpoint lng: " + lngm)
+                    let lngm = (lngf + lngo) / 2
+                    //console.log("Midpoint lng: " + lngm)
 
                     midpoint.lat = latm;
                     midpoint.lng = lngm;
@@ -197,8 +202,6 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             for (var j = 0; j < locations.length; j++) {
                 weatherMapsAPICall(locations[j].lat, locations[j].lng, map)
             }
-
-
         } else {
             window.alert('Directions request failed due to ' + status);
         }
@@ -209,14 +212,14 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
         // Adds a marker to the map and push to the array.
         function addMarker(location, map) {
-            console.log(location)
-            console.log(map)
+            //console.log(location)
+            //console.log(map)
             var marker = new google.maps.Marker({
                 position: location,
                 map: map
             });
             markers.push(marker);
-            console.log(markers)
+            //console.log(markers)
 
         }
 
@@ -226,7 +229,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             let lng = weatherRes.coord.lon;
 
             var iconcode = weatherRes.weather[0].icon;
-            var location = new google.maps.LatLng(lat,lng)
+            var location = new google.maps.LatLng(lat, lng)
 
             var marker = new google.maps.Marker({
                 position: location,
@@ -235,7 +238,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             });
             markers.push(marker);
             marker.setMap(map)
-            console.log("Markers: " + markers)
+            //console.log("Markers: " + markers)
 
         }
 
@@ -298,7 +301,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 location.lat = response.coord.lat;
                 location.lng = response.coord.lon;
                 //console.log(typeof location.lat)
-                console.log(location);
+                //console.log(location);
 
 
                 addWeatherMarkers(response, map)
@@ -312,22 +315,120 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 };
 
 let tableManager = {
-    createRow: function(data){
-        let mainTable = $('#directionsText')
+    createRow: function (data, j) {
+        //console.log('Row data: ' + JSON.stringify(data, null, 2));
+        let mainTable = $('#directionsText');
+        let newRow = $("<tr>");
+        newRow.attr({
+            class: "directionsText-row",
+            id: "row" + j
+        });
+
+        for (let i = 0; i < 5; i++) {
+            let newCell = this.createCell(data, j, i);
+            newRow.append(newCell);
+        }
+
+        mainTable.append(newRow)
 
     },
-    createCell: function (data) {
+    createCell: function (data, j, i) {
+        //console.log("Cell data: " + JSON.stringify(data, null, 2));
         let newCell = $('<td>');
-        // newCell.
-        
+        newCell.attr({
+            class: "directionsText-cell",
+        });
+
+        let text = $("<p>");
+
+        // Checks if data is found
+        if (!data) {
+            text.text("Data not found!")
+            newCell.append(text)
+            return newCell
+        } else {
+            switch (i) {
+                // Set the directions
+                case 0:
+                    newCell.attr({
+                        id: "row" + j + "-directions",
+                    });
+
+                    text.text(data.instructions)
+                    newCell.append(text)
+
+                    break;
+
+                // Set the distance (km) - add a miles version in the future
+                case 1:
+                    newCell.attr({
+                        id: "row" + j + "-distance",
+                    });
+
+                    text.text(data.distance.text)
+                    newCell.append(text)
+
+                    break;
+
+                // Sets the intial weather (blank at first!)
+                case 2:
+                    newCell.attr({
+                        id: "row" + j + "-weather",
+                    });
+
+                    // let img = $('<img>')
+                    // img.attr({
+                    //     alt: "Loading icon",
+                    //     src: "./assets/images/loading-icon.gif",
+                    //     style: "width: 30px; height: 30px"
+                    // })
+                    // newCell.append(img)
+
+                    break;
+                // Sets the intial weather icon (blank at first!)
+                case 3:
+                    newCell.attr({
+                        id: "row" + j + "-weatherIcon",
+                    });
+
+                    // let img = $('<img>')
+                    // img.attr({
+                    //     alt: "Loading icon",
+                    //     src: "./assets/images/loading-icon.gif",
+                    //     style: "width: 30px; height: 30px"
+                    // })
+                    // newCell.append(img)
+
+                    break;
+                // Time display
+                case 4:
+                    newCell.attr({
+                        id: "row" + j + "-time",
+                    });
+
+                    text.text(data.duration.text)
+                    newCell.append(text)
+
+                    break;
+                case 5:
+                    newCell.attr({
+                        id: "row" + j + "-totalTime",
+                    });
+
+                    text.text("filler")
+                    newCell.append(text)
+
+                    break;
+            }
+            return newCell
+        }
     },
-    updateCell: function (data){
+    updateCell: function (data) {
 
     },
-    clearTable: function(){
-        let mainTable = $('#directionsText').remove();
+    clearTable: function () {
+        $('#directionsText').remove();
     }
 }
-
 
 
