@@ -1,10 +1,13 @@
-import { error } from "util";
+//import { error } from "util";
 
 var map;
 
 $(document).ready(function () {
     //console.log("Directions: " + JSON.stringify(passedData.directions, null, 2));
     // console.log(passedData.query)
+
+    //SETS THE MAIN MAP'S DIV TO BE RESIZEABLE
+    $('#map').resizable();
 });
 
 
@@ -98,7 +101,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
     //console.log(markers);
 
-
+    // intiate the route method of the directionsService object - actually calculates the route
     directionsService.route({
         origin: start,
         destination: end,
@@ -108,29 +111,55 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             // set a boolean for checking if the final location's weather is placed on map
             let finalDest = false;
             //console.log("markers (before delete): " + markers)
+
+            //CHECKS THE SELECTED MODE OF THE DIRECTIONS REQUEST - SETS IT TO 
+            // 'DRIVING' IF NO MODE EXPLICITY SELECTED/AVAILABLE
             if (selectedMode !== 'DRIVING' || !selectedMode) {
                 $('#mode').val(selectedMode);
             } else {
                 $('#mode').val("DRIVING");
-            }
+            };
+
+            //THIS IS AN OLD CONSOLE.LOG CHECK TO MAKE SURE THE DIRECTIONS-TEXT TABLE COULD 
+            //BE MANIPULATED AS PART OF THE DOM
             if ($("#directionsText")) {
                 console.log("I can communicate with the directions table!")
             } else {
                 console.log("I can't communicate with the directions table :(")
             }
+
+            // CLEARS THE MAP OF MARKERS
             deleteMarkers()
-            //console.log("markers (after delete): " + markers)
-            //console.log(response);
+
+            // OLD CONSOLE LOGS TO CHECK THAT THE DELETE MARKERS FUNCTIONS WORKED
+
+                //console.log("markers (after delete): " + markers)
+                //console.log(response);
+
+            // TAKES THE DIRECTIONS FROM THE DIRECTIONS SERVICE AND SETS THEM TO A GOOGLE MAPS OBJECT
+
             directionsDisplay.setDirections(response);
             //console.log(response)
-            // This assembles the array of locations to pass to our OpenWeatherMap API to get the weather!
+
+            // THIS STEP STARTS TO PULL THE DATA FROM THE RESPONSE AND PASS IT TO THE DOM FOR USER DISPLAY
             let steps = response.routes[0].legs[0].steps;
             console.log(steps)
+
+            // THIS ADDS A CONSOLE LOG FOR THE TABLE HEADERS, JUST TO SEE HOW THEY CAN BE USED IN THE DIRECTIONS
+            // TABLE CREATION LATER.
+            tableManager.logHeaders();
+
+            //CLEARS THE TABLE OF DIRECTIONS
+            tableManager.clearTable();
+
             for (var i = 0; i < steps.length; i++) {
                 //console.log("Step for directions: " + JSON.stringify(steps[i], null, 2));
-                // prints out a table of results
+                // PRINTS OUT A TABLE OF RESULTS
                 tableManager.createRow(steps[i], i)
-                // gets the weather at the starting location
+
+
+                // THESE SUB-STEPS ASSEMBLE AN ARRAY OF GEOGRAPHICAL COORDINATES TO SEND TO OPENWEATHERMAPS TO GET WEATHER DATA
+                // GETS THE COORDINATES AT THE STARTING LOCATION
                 if (i === 0) {
                     let location = {};
                     let lat = steps[i].start_location.lat()
@@ -141,23 +170,28 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     //console.log(lng)
                     location.lng = lng;
 
+                    location.number = i;
+
                     locations.push(location)
                 }
 
-                // gets the weather at the end location
+                // GETS THE COORDINATES AT THE END LOCATION
                 if (i === (steps.length - 1)) {
                     let location = {};
-                    let lat = steps[i].start_location.lat()
+                    let lat = steps[i].end_location.lat()
                     //console.log(lat)
                     location.lat = lat;
 
-                    let lng = steps[i].start_location.lng()
+                    let lng = steps[i].end_location.lng()
                     //console.log(lng)
                     location.lng = lng;
+
+                    location.number = i
 
                     locations.push(location)
                 }
 
+                // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 10 KM (6.21 MILES)
                 if (steps[i].distance.value > 10000 && i !== (steps.length - 1)) {
                     let location = {};
                     let lat = steps[i].end_location.lat()
@@ -168,9 +202,14 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     //console.log(lng)
                     location.lng = lng;
 
+                    location.number = i
+
                     locations.push(location)
                 }
 
+                // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 24 KM (14.91 MILES) AND
+                // CALCULATES THE MIDPOINT BETWEEN IT'S START LOCATION AND END LOCATION (NOT A PERFECT SYSTEM
+                // BUT GENERALLY FOLLOWS THE TRACK OF THE ROUTE WELL ENOUGH TO NOT BE TOO FAR OFF-COURSE)
                 if (steps[i].distance.value > 24000 && i !== 0) {
                     // find the coordinal midpoint between the step's start and end location to do a weather search
                     let midpoint = {};
@@ -193,16 +232,21 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
                     midpoint.lat = latm;
                     midpoint.lng = lngm;
+                    midpoint.number = i
 
                     locations.push(midpoint)
                 }
             }
 
-            //console.log(locations)
+            console.log(locations)
+
+            //TAKES THE LOCATIONS ARRAY CONSTRUCTED IN THE PREVIOUS STEP AND MAKES 
+            // WEATHER CALLS FOR ITEMS IN THE ARRAY
             for (var j = 0; j < locations.length; j++) {
-                weatherMapsAPICall(locations[j].lat, locations[j].lng, map)
+                weatherMapsAPICall(locations[j], map)
             }
         } else {
+            // LOGS AN ERROR IF NO VALID DIRECTIONS WERE FOUND - CURRENTLY AN ALERT, WILL BE CHANGED TO A MODAL POP-UP
             window.alert('Directions request failed due to ' + status);
         }
 
@@ -210,7 +254,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
         //      MAP RENDERING FUNCTIONS
         //===============================================
 
-        // Adds a marker to the map and push to the array.
+        // ADDS A STANDARD GOOGLE MAPS MARKER TO THE MAP ARRAY FOR FUTURE RENDERING
         function addMarker(location, map) {
             //console.log(location)
             //console.log(map)
@@ -223,8 +267,9 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
         }
 
-        function addWeatherMarkers(weatherRes, map) {
-            //console.log("Weather Results: " + JSON.stringify(weatherRes,null,2))
+        // ADDS A CUSTOMIZED MARKER (WITH WEATHER DATA) TO THE MAP ARRAY FOR FUTURE RENDERING
+        function addWeatherMarkers(weatherRes, map, callLocation) {
+            // console.log("Weather Results: " + JSON.stringify(weatherRes,null,2));
             let lat = weatherRes.coord.lat;
             let lng = weatherRes.coord.lon;
 
@@ -240,9 +285,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             marker.setMap(map)
             //console.log("Markers: " + markers)
 
+            if (callLocation.number !== undefined) {
+                let target = "row" + callLocation.number;
+                tableManager.updateWeatherCells(target, weatherRes);
+            };
+
+
         }
 
-        // Sets the map on all markers in the array.
+        // FUNCTION TO SET WHICH MAP ON THE PAGE (IN THIS CASE THERE IS ONLY ONE MAP) ALL THE 
+        // MARKERS IN THE MAP ARRAY ARE DISPLAYED ON.
         function setMapOnAll(map) {
             for (var i = 0; i < markers.length; i++) {
                 markers[i].setMap(map);
@@ -276,9 +328,11 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
         //     WEATHER RENDERING FUNCTIONS
         // ====================================
 
-        function weatherMapsAPICall(latitude, longitude, map) {
+        function weatherMapsAPICall(location, map) {
             //var cityName = $("#startLocation").val().trim();
             // var latitude = $("#startLat").val().trim();
+            let latitude = location.lat;
+            let longitude = location.lng
 
             console.log('Weather API call launched')
 
@@ -297,14 +351,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 //console.log(response);
                 //console.log(response.coord);
                 //console.log(response.coord.lat);
-                let location = {};
-                location.lat = response.coord.lat;
-                location.lng = response.coord.lon;
+                // let location = {};
+                // location.lat = response.coord.lat;
+                // location.lng = response.coord.lon;
                 //console.log(typeof location.lat)
                 //console.log(location);
 
+                console.log(location)
 
-                addWeatherMarkers(response, map)
+
+                addWeatherMarkers(response, map, location)
                 //addMarker(location,map)
 
             });
@@ -315,6 +371,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 };
 
 let tableManager = {
+    // CREATES A ROW FOR THE TABLE
     createRow: function (data, j) {
         //console.log('Row data: ' + JSON.stringify(data, null, 2));
         let mainTable = $('#directionsText');
@@ -324,7 +381,12 @@ let tableManager = {
             id: "row" + j
         });
 
-        for (let i = 0; i < 5; i++) {
+        // FINDS THE NUMBER OF <th> TAGS IN THE TABLE HEADER AND USES THAT NUMBER 
+        // TO CREATE CELLS IN EACH ROW
+        let tableCellNum = $("#directions-header-row").children().length;
+        //console.log(tableCellNum)
+        
+        for (let i = 0; i < tableCellNum; i++) {
             let newCell = this.createCell(data, j, i);
             newRow.append(newCell);
         }
@@ -332,6 +394,7 @@ let tableManager = {
         mainTable.append(newRow)
 
     },
+    // CREATES A CELL FOR THE TABLE
     createCell: function (data, j, i) {
         //console.log("Cell data: " + JSON.stringify(data, null, 2));
         let newCell = $('<td>');
@@ -354,7 +417,7 @@ let tableManager = {
                         id: "row" + j + "-directions",
                     });
 
-                    text.text(data.instructions)
+                    text.html(data.instructions)
                     newCell.append(text)
 
                     break;
@@ -374,30 +437,22 @@ let tableManager = {
                 case 2:
                     newCell.attr({
                         id: "row" + j + "-weather",
+                        class: "empty-weather"
                     });
 
-                    // let img = $('<img>')
-                    // img.attr({
-                    //     alt: "Loading icon",
-                    //     src: "./assets/images/loading-icon.gif",
-                    //     style: "width: 30px; height: 30px"
-                    // })
-                    // newCell.append(img)
+                    //adds a loading symbol
+                    newCell.append(this.insertLoadIcon())
 
                     break;
                 // Sets the intial weather icon (blank at first!)
                 case 3:
                     newCell.attr({
                         id: "row" + j + "-weatherIcon",
+                        class: "empty-weatherIcon"
                     });
 
-                    // let img = $('<img>')
-                    // img.attr({
-                    //     alt: "Loading icon",
-                    //     src: "./assets/images/loading-icon.gif",
-                    //     style: "width: 30px; height: 30px"
-                    // })
-                    // newCell.append(img)
+                    //adds a loading symbol
+                    newCell.append(this.insertLoadIcon())
 
                     break;
                 // Time display
@@ -423,11 +478,70 @@ let tableManager = {
             return newCell
         }
     },
-    updateCell: function (data) {
+    updateCell: function (targetRow,targetCell, data) {
+
+
+
+    },
+    updateWeatherCells :function (targetRow, data) {
+        //console.log("Weather Results: " + JSON.stringify(data,null,2))
+        console.log("Target row: " + targetRow)
+
+        //UPDATE THE WEATHER CELL
+        let weatherCellID = "#" + targetRow + "-weather"
+        let weatherIconCellID = "#" + targetRow + "-weatherIcon"
+
+        let Cell1 = $(weatherCellID);
+        Cell1.empty();
+        if (Cell1.attr('class')==="full-weather") {
+            Cell1.switchClass('full-weather', 'empty-weather')
+        };
+
+        let forecast = data.weather[0].main
+        Cell1.text(forecast)
+        Cell1.switchClass('empty-weather', 'full-weather')
+
+        //ADD A WEATHER ICON
+        let Cell2 = $(weatherIconCellID)
+        Cell2.empty();
+        if (Cell2.attr('class')==="full-weatherIcon") {
+            Cell2.switchClass('full-weatherIcon', 'empty-weatherIcon')
+        };
+
+
+        let iconcode = data.weather[0].icon
+        let iconURL = "http://openweathermap.org/img/w/" + iconcode + ".png"
+
+        let newIcon = $("<img>");
+        newIcon.attr({
+            src: iconURL,
+            alt: data.weather[0].description
+        });
+
+        Cell2.append(newIcon);
+        Cell2.switchClass('empty-weatherIcon', 'full-weatherIcon');
+
+
 
     },
     clearTable: function () {
-        $('#directionsText').remove();
+        $('#directionsText').empty();
+    },
+    logHeaders: function() {
+        let tableHeaders = $("#directions-header-row").children();
+
+        console.log("tableHeaders: " + JSON.stringify(tableHeaders,null,2));
+    },
+    insertLoadIcon: function () {
+        let img = $('<img>');
+        img.attr({
+            alt: "Loading icon",
+            src: "./assets/images/loading-icon.gif",
+            style: "width: 30px; height: 30px",
+            class: "loading-icon"
+        });
+
+        return img;
     }
 }
 
