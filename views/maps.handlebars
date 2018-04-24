@@ -17,23 +17,21 @@
     <input type="text" id="reend" placeholder="Ending Location">
     <button id="reroute">Submit</button>
 </div>
-<div id="map" style="height:800px; width:800px"></div>
+<div id="map" style="height:800px; width:800px" class = "display-none" ></div>
 <br>
 <br>
 
 {{>directiontext}}
 
-<script>    
+{{!-- <script>    
     var passedData = {
         directions: {{{ directions }}}
     }
 
     console.log(passedData)
     console.log(passedData.directions.routes[0].legs)
-
-
-</script>
+</script> --}}
 <script src="./mapDisplay.js"></script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&callback=initMap&libraries=places">
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&libraries=places">
 </script>

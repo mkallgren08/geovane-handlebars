@@ -8,11 +8,21 @@ $(document).ready(function () {
 
     //SETS THE MAIN MAP'S DIV TO BE RESIZEABLE
     $('#map').resizable();
+
+    
+    const input1 = setAutoComplete("restart");
+    const input2 = setAutoComplete("reend");
+
+
+    $('#reroute').on('click', function(){
+        $("#map").switchClass('display-none','display-block')
+        initMap()
+    })
 });
 
 
 
-let legs = passedData.directions.routes[0].legs[0]
+//let legs = passedData.directions.routes[0].legs[0]
 //console.log("Legs: " + JSON.stringify(legs, null, 2));
 //console.log(legs.start_address)
 // ===================================
@@ -20,23 +30,17 @@ let legs = passedData.directions.routes[0].legs[0]
 // ===================================
 
 function initMap() {
-    var directionsService = new google.maps.DirectionsService;
-    var directionsDisplay = new google.maps.DirectionsRenderer({ suppressMarkers: true });
-    var selectedMode = $('#mode').val();
+    const directionsService = new google.maps.DirectionsService;
+    const directionsDisplay = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+    let selectedMode = $('#mode').val();
     let mapOrigin;
 
-    let input1 = document.getElementById('restart');
-    let input2 = document.getElementById('reend')
-
-    let autoStart = new google.maps.places.Autocomplete(input1)
-    let autoEnd = new google.maps.places.Autocomplete(input2)
-
-    let reStart = document.getElementById('restart').value
-    let reEnd = document.getElementById('reend').value
-    let routeStart = legs.start_address;
-    let routeEnd = legs.end_address;
-    let startLatLng = legs.start_location;
-    let endLatLng = legs.end_location;
+    let routeStart = document.getElementById('restart').value
+    let routeEnd = document.getElementById('reend').value
+    // let routeStart = legs.start_address;
+    // let routeEnd = legs.end_address;
+    // let startLatLng = legs.start_location;
+    // let endLatLng = legs.end_location;
 
     //console.log(selectedMode);
     map = new google.maps.Map(document.getElementById('map'), {
@@ -370,7 +374,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
 };
 
-let tableManager = {
+const tableManager = {
     // CREATES A ROW FOR THE TABLE
     createRow: function (data, j) {
         //console.log('Row data: ' + JSON.stringify(data, null, 2));
@@ -545,4 +549,10 @@ let tableManager = {
     }
 }
 
-
+function setAutoComplete(htmlID) {
+    // NOTE: We have to use document.getElementByID instead of jQuery's $.() method because
+    // jQuery and Google Maps don't play so nice when used directly together.
+    let autoComElem = document.getElementById(htmlID);
+    let tag = new google.maps.places.Autocomplete(autoComElem)
+    return tag;
+}
