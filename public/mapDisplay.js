@@ -1,25 +1,46 @@
-//import { error } from "util";
+// Clear localStorage
+//localStorage.clear();
+
+// Store all content into localStorage
+//localStorage.setItem("name", name);
+
+// By default display the content from localStorage
+//$("#name-display").text(localStorage.getItem("name"));
 
 var map;
 
 $(document).ready(function () {
-    //console.log("Directions: " + JSON.stringify(passedData.directions, null, 2));
-    // console.log(passedData.query)
+    console.log(localStorage)
+
 
     //SETS THE MAIN MAP'S DIV TO BE RESIZEABLE
     $('#map').resizable();
 
-    
-    const input1 = setAutoComplete("restart");
-    const input2 = setAutoComplete("reend");
+    //localStorage.removeItem("geovane-time")
+
+    //SETS A TIMESTAMP TO HOLD DATA IN LOCAL STORAGE
+    let timeNow = new Date();
+    timeNow.toISOString();
+
+    //CHECKS THE OLD TIMESTAMP AND REFRESHES IT IF OLDER THAN A DAY
+    console.log(timeNow)
+    let timestamp = localStorage.getItem("geovane-time");
 
 
-    $('#reroute').on('click', function(){
-        $("#map").switchClass('display-none','display-block')
-        initMap()
-    })
+    if (!timestamp || timeNow > moment(timestamp).add(24,'hours')) {
+        localStorage.removeItem("geovane-start")
+        localStorage.removeItem("geovane-end")
+        localStorage.setItem("geovane-time", timeNow)
+
+        console.log(localStorage)
+    }
+
+
+    // $('#reroute').on('click', function(){
+    //     $("#map").switchClass('display-none','display-block')
+    //     initMap()
+    // })
 });
-
 
 
 //let legs = passedData.directions.routes[0].legs[0]
@@ -29,30 +50,44 @@ $(document).ready(function () {
 //          FUNCTIONS
 // ===================================
 
+function setAllAutoComs() {
+    console.log('Autocomplete set-up fired!')
+    let input1 = setAutoComplete("restart");
+    let input2 = setAutoComplete("reend");
+};
+
+function setGeovaneLocalStorage (start,end) {
+    localStorage.setItem("geovane-start", start)
+}
+
+
 function initMap() {
+
+    setAllAutoComs();
+
     const directionsService = new google.maps.DirectionsService;
     const directionsDisplay = new google.maps.DirectionsRenderer({ suppressMarkers: true });
     let selectedMode = $('#mode').val();
     let mapOrigin;
+    let startPoint = document.getElementById('restart').value;
+    let endPoint = document.getElementById('reend').value;
 
-    let routeStart = document.getElementById('restart').value
-    let routeEnd = document.getElementById('reend').value
-    // let routeStart = legs.start_address;
-    // let routeEnd = legs.end_address;
-    // let startLatLng = legs.start_location;
-    // let endLatLng = legs.end_location;
+    let routeStart = startPoint;
+    let routeEnd = endPoint;
+
+
 
     //console.log(selectedMode);
     map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 1,
+        zoom: 2,
         center: { lat: 0, lng: 0 },
         gestureHandling: 'cooperative'
     });
 
-    console.log("First instance of map:" + map);
+    // console.log("First instance of map:" + map);
 
-    directionsDisplay.setMap(map);
-    calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map)
+    // directionsDisplay.setMap(map);
+    // calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map)
 
     var onChangeHandler = function () {
         var selectedMode = $('#mode').val();
@@ -71,9 +106,9 @@ function initMap() {
     };
 
     var onvalChange = function () {
-        reStart = document.getElementById('restart').value
+        reStart = startPoint
         console.log(reStart)
-        reEnd = document.getElementById('reend').value
+        reEnd = endPoint
         console.log(reEnd)
 
     }
@@ -137,13 +172,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
             // OLD CONSOLE LOGS TO CHECK THAT THE DELETE MARKERS FUNCTIONS WORKED
 
-                //console.log("markers (after delete): " + markers)
-                //console.log(response);
+            //console.log("markers (after delete): " + markers)
+            //console.log(response);
 
             // TAKES THE DIRECTIONS FROM THE DIRECTIONS SERVICE AND SETS THEM TO A GOOGLE MAPS OBJECT
-
             directionsDisplay.setDirections(response);
-            //console.log(response)
+            console.log(response)
+
+            // SETS THE BOUNDS OF THE DISPLAYED MAP TO THE BOUNDS FOUND IN THE DIRECTION RESPONSE
+            let bounds = response.routes[0].bounds
+            map.fitBounds(bounds)
 
             // THIS STEP STARTS TO PULL THE DATA FROM THE RESPONSE AND PASS IT TO THE DOM FOR USER DISPLAY
             let steps = response.routes[0].legs[0].steps;
@@ -389,7 +427,7 @@ const tableManager = {
         // TO CREATE CELLS IN EACH ROW
         let tableCellNum = $("#directions-header-row").children().length;
         //console.log(tableCellNum)
-        
+
         for (let i = 0; i < tableCellNum; i++) {
             let newCell = this.createCell(data, j, i);
             newRow.append(newCell);
@@ -482,12 +520,12 @@ const tableManager = {
             return newCell
         }
     },
-    updateCell: function (targetRow,targetCell, data) {
+    updateCell: function (targetRow, targetCell, data) {
 
 
 
     },
-    updateWeatherCells :function (targetRow, data) {
+    updateWeatherCells: function (targetRow, data) {
         //console.log("Weather Results: " + JSON.stringify(data,null,2))
         console.log("Target row: " + targetRow)
 
@@ -497,7 +535,7 @@ const tableManager = {
 
         let Cell1 = $(weatherCellID);
         Cell1.empty();
-        if (Cell1.attr('class')==="full-weather") {
+        if (Cell1.attr('class') === "full-weather") {
             Cell1.switchClass('full-weather', 'empty-weather')
         };
 
@@ -508,7 +546,7 @@ const tableManager = {
         //ADD A WEATHER ICON
         let Cell2 = $(weatherIconCellID)
         Cell2.empty();
-        if (Cell2.attr('class')==="full-weatherIcon") {
+        if (Cell2.attr('class') === "full-weatherIcon") {
             Cell2.switchClass('full-weatherIcon', 'empty-weatherIcon')
         };
 
@@ -531,10 +569,10 @@ const tableManager = {
     clearTable: function () {
         $('#directionsText').empty();
     },
-    logHeaders: function() {
+    logHeaders: function () {
         let tableHeaders = $("#directions-header-row").children();
 
-        console.log("tableHeaders: " + JSON.stringify(tableHeaders,null,2));
+        console.log("tableHeaders: " + JSON.stringify(tableHeaders, null, 2));
     },
     insertLoadIcon: function () {
         let img = $('<img>');
