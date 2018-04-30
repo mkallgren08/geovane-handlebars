@@ -27,7 +27,7 @@ $(document).ready(function () {
     let timestamp = localStorage.getItem("geovane-time");
 
 
-    if (!timestamp || timeNow > moment(timestamp).add(24,'hours')) {
+    if (!timestamp || timeNow > moment(timestamp).add(24, 'hours')) {
         localStorage.removeItem("geovane-start")
         localStorage.removeItem("geovane-end")
         localStorage.setItem("geovane-time", timeNow)
@@ -56,17 +56,38 @@ function setAllAutoComs() {
     let input2 = setAutoComplete("reend");
 };
 
-function setGeovaneLocalStorage (start,end) {
+function setGeovaneLocalStorage(start, end) {
     localStorage.setItem("geovane-start", start)
+    localStorage.setItem("geovane-end", end)
+    console.log(localStorage)
 }
 
 
 function initMap() {
-
     setAllAutoComs();
+    let storedStart = localStorage.getItem("geovane-start");
+    let storedEnd = localStorage.getItem("geovane-end");
+
+    if (storedStart && storedEnd) {
+        $('#restart').val(storedStart);
+        $('#reend').val(storedEnd);
+    };
+    //console.log(selectedMode);
+
+    // THE MAP IS THE FIRST THING THAT NEEDS TO BE INITIALIZED
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 2,
+        center: { lat: 0, lng: 0 },
+        gestureHandling: 'cooperative'
+    });
 
     const directionsService = new google.maps.DirectionsService;
-    const directionsDisplay = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+    const directionsDisplay = new google.maps.DirectionsRenderer({
+        // PREVENTS DEFAULT MARKERS FROM BEING SPAWNED
+        suppressMarkers: true,
+        // SETS THE DIRECTIONS DISPLAY TO THE PAGE'S MAP
+        map: map
+    });
     let selectedMode = $('#mode').val();
     let mapOrigin;
     let startPoint = document.getElementById('restart').value;
@@ -77,12 +98,7 @@ function initMap() {
 
 
 
-    //console.log(selectedMode);
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 2,
-        center: { lat: 0, lng: 0 },
-        gestureHandling: 'cooperative'
-    });
+
 
     // console.log("First instance of map:" + map);
 
@@ -106,9 +122,9 @@ function initMap() {
     };
 
     var onvalChange = function () {
-        reStart = startPoint
+        reStart = document.getElementById('restart').value;
         console.log(reStart)
-        reEnd = endPoint
+        reEnd = document.getElementById('reend').value;
         console.log(reEnd)
 
     }
@@ -120,6 +136,7 @@ function initMap() {
     $('#reroute').on('click', function () {
         //we call onvalChange here to grab the auto-completed values located in the input boxes.
         onvalChange();
+        setGeovaneLocalStorage(reStart, reEnd);
         calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map);
     });
 }
@@ -144,7 +161,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
     directionsService.route({
         origin: start,
         destination: end,
-        travelMode: selectedMode
+        travelMode: selectedMode,
+        provideRouteAlternatives: true,
     }, function (response, status) {
         if (status === 'OK') {
             // set a boolean for checking if the final location's weather is placed on map
@@ -175,13 +193,15 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             //console.log("markers (after delete): " + markers)
             //console.log(response);
 
-            // TAKES THE DIRECTIONS FROM THE DIRECTIONS SERVICE AND SETS THEM TO A GOOGLE MAPS OBJECT
-            directionsDisplay.setDirections(response);
-            console.log(response)
+
 
             // SETS THE BOUNDS OF THE DISPLAYED MAP TO THE BOUNDS FOUND IN THE DIRECTION RESPONSE
             let bounds = response.routes[0].bounds
             map.fitBounds(bounds)
+
+            // TAKES THE DIRECTIONS FROM THE DIRECTIONS SERVICE AND SETS THEM TO A GOOGLE MAPS OBJECT
+            directionsDisplay.setDirections(response);
+            console.log(response)
 
             // THIS STEP STARTS TO PULL THE DATA FROM THE RESPONSE AND PASS IT TO THE DOM FOR USER DISPLAY
             let steps = response.routes[0].legs[0].steps;
@@ -203,51 +223,16 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 // THESE SUB-STEPS ASSEMBLE AN ARRAY OF GEOGRAPHICAL COORDINATES TO SEND TO OPENWEATHERMAPS TO GET WEATHER DATA
                 // GETS THE COORDINATES AT THE STARTING LOCATION
                 if (i === 0) {
-                    let location = {};
-                    let lat = steps[i].start_location.lat()
-                    //console.log(lat)
-                    location.lat = lat;
-
-                    let lng = steps[i].start_location.lng()
-                    //console.log(lng)
-                    location.lng = lng;
-
-                    location.number = i;
-
+                    let location = tableManager.makeMarkedLocation(i, steps)
                     locations.push(location)
                 }
 
                 // GETS THE COORDINATES AT THE END LOCATION
                 if (i === (steps.length - 1)) {
-                    let location = {};
-                    let lat = steps[i].end_location.lat()
-                    //console.log(lat)
-                    location.lat = lat;
-
-                    let lng = steps[i].end_location.lng()
-                    //console.log(lng)
-                    location.lng = lng;
-
-                    location.number = i
-
+                    let location = tableManager.makeMarkedLocation(i, steps)
                     locations.push(location)
                 }
 
-                // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 10 KM (6.21 MILES)
-                if (steps[i].distance.value > 10000 && i !== (steps.length - 1)) {
-                    let location = {};
-                    let lat = steps[i].end_location.lat()
-                    //console.log(lat)
-                    location.lat = lat;
-
-                    let lng = steps[i].end_location.lng()
-                    //console.log(lng)
-                    location.lng = lng;
-
-                    location.number = i
-
-                    locations.push(location)
-                }
 
                 // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 24 KM (14.91 MILES) AND
                 // CALCULATES THE MIDPOINT BETWEEN IT'S START LOCATION AND END LOCATION (NOT A PERFECT SYSTEM
@@ -256,7 +241,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     // find the coordinal midpoint between the step's start and end location to do a weather search
                     let midpoint = {};
 
-                    // define the final and origin latitudes
+                    // define the final and origin latitudes of the midpoint's endpoints
                     let latf = steps[i].end_location.lat();
                     let lato = steps[i].start_location.lat();
 
@@ -264,7 +249,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     let latm = (latf + lato) / 2
                     //console.log("Midpoint lat: " + latm)
 
-                    // define the final and origin longitudes
+                    // define the final and origin longitudes of the midpoint's endpoints
                     let lngf = steps[i].end_location.lng();
                     let lngo = steps[i].start_location.lng();
 
@@ -275,10 +260,19 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     midpoint.lat = latm;
                     midpoint.lng = lngm;
                     midpoint.number = i
+                    midpoint.marker = true;
 
                     locations.push(midpoint)
                 }
-            }
+
+                // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 10 KM (6.21 MILES)
+                else if (steps[i].distance.value > 10000 && i !== (steps.length - 1)) {
+                    let location = tableManager.makeMarkedLocation(i, steps)
+                    locations.push(location)
+                } else {
+
+                };
+            };
 
             console.log(locations)
 
@@ -401,8 +395,15 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
                 console.log(location)
 
+                if (location.marker === true) {
+                    addWeatherMarkers(response, map, location)
+                } else {
+                    if (location.number !== undefined) {
+                        let target = "row" + callLocation.number;
+                        tableManager.updateWeatherCells(target, weatherRes);
+                    };
+                }
 
-                addWeatherMarkers(response, map, location)
                 //addMarker(location,map)
 
             });
@@ -584,6 +585,38 @@ const tableManager = {
         });
 
         return img;
+    },
+    makeMarkedLocation: function (i, steps) {
+        let location = {};
+        let lat = steps[i].start_location.lat()
+        //console.log(lat)
+        location.lat = lat;
+
+        let lng = steps[i].start_location.lng()
+        //console.log(lng)
+        location.lng = lng;
+
+        location.number = i;
+
+        location.marker = true;
+
+        return location;
+    },
+    makeUnMarkedLocation: function (i, steps) {
+        let location = {};
+        let lat = steps[i].start_location.lat()
+        //console.log(lat)
+        location.lat = lat;
+
+        let lng = steps[i].start_location.lng()
+        //console.log(lng)
+        location.lng = lng;
+
+        location.number = i;
+
+        location.marker = true;
+
+        return location;
     }
 }
 
@@ -593,4 +626,6 @@ function setAutoComplete(htmlID) {
     let autoComElem = document.getElementById(htmlID);
     let tag = new google.maps.places.Autocomplete(autoComElem)
     return tag;
-}
+};
+
+
