@@ -165,8 +165,6 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
         provideRouteAlternatives: true,
     }, function (response, status) {
         if (status === 'OK') {
-            // set a boolean for checking if the final location's weather is placed on map
-            let finalDest = false;
             //console.log("markers (before delete): " + markers)
 
             //CHECKS THE SELECTED MODE OF THE DIRECTIONS REQUEST - SETS IT TO 
@@ -178,21 +176,23 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             };
 
             //THIS IS AN OLD CONSOLE.LOG CHECK TO MAKE SURE THE DIRECTIONS-TEXT TABLE COULD 
-            //BE MANIPULATED AS PART OF THE DOM
-            if ($("#directionsText")) {
-                console.log("I can communicate with the directions table!")
-            } else {
-                console.log("I can't communicate with the directions table :(")
-            }
+                //BE MANIPULATED AS PART OF THE DOM
+                // if ($("#directionsText")) {
+                //     console.log("I can communicate with the directions table!")
+                // } else {
+                //     console.log("I can't communicate with the directions table :(")
+                // }
 
-            // CLEARS THE MAP OF MARKERS
+            //
+
+                // CLEARS THE MAP OF MARKERS
             deleteMarkers()
 
             // OLD CONSOLE LOGS TO CHECK THAT THE DELETE MARKERS FUNCTIONS WORKED
 
-            //console.log("markers (after delete): " + markers)
-            //console.log(response);
-
+                //console.log("markers (after delete): " + markers)
+                //console.log(response);
+            //
 
 
             // SETS THE BOUNDS OF THE DISPLAYED MAP TO THE BOUNDS FOUND IN THE DIRECTION RESPONSE
@@ -217,6 +217,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             for (var i = 0; i < steps.length; i++) {
                 //console.log("Step for directions: " + JSON.stringify(steps[i], null, 2));
                 // PRINTS OUT A TABLE OF RESULTS
+                console.log("Should be creating new rows here")
                 tableManager.createRow(steps[i], i)
 
 
@@ -228,7 +229,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 }
 
                 // GETS THE COORDINATES AT THE END LOCATION
-                if (i === (steps.length - 1)) {
+                let endStep = steps.length - 1;
+                if (i === endStep) {
                     let location = tableManager.makeMarkedLocation(i, steps)
                     locations.push(location)
                 }
@@ -237,6 +239,9 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 24 KM (14.91 MILES) AND
                 // CALCULATES THE MIDPOINT BETWEEN IT'S START LOCATION AND END LOCATION (NOT A PERFECT SYSTEM
                 // BUT GENERALLY FOLLOWS THE TRACK OF THE ROUTE WELL ENOUGH TO NOT BE TOO FAR OFF-COURSE)
+                // AND AS DEFAULT CASE PUTS THE LOCATION INTO THE ARRAY WITH A MARKER_FLAG EQUAL TO 'FALSE'
+                // THIS LETS THE DATA BE PUT INTO THE TABLE BUT NOT CLUTTER UP THE MAP
+
                 if (steps[i].distance.value > 24000 && i !== 0) {
                     // find the coordinal midpoint between the step's start and end location to do a weather search
                     let midpoint = {};
@@ -270,7 +275,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     let location = tableManager.makeMarkedLocation(i, steps)
                     locations.push(location)
                 } else {
-
+                    let location = tableManager.makeUnMarkedLocation(i, steps)
+                    locations.push(location)
                 };
             };
 
@@ -399,8 +405,8 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     addWeatherMarkers(response, map, location)
                 } else {
                     if (location.number !== undefined) {
-                        let target = "row" + callLocation.number;
-                        tableManager.updateWeatherCells(target, weatherRes);
+                        let target = "row" + location.number;
+                        tableManager.updateWeatherCells(target, response);
                     };
                 }
 
@@ -417,7 +423,7 @@ const tableManager = {
     // CREATES A ROW FOR THE TABLE
     createRow: function (data, j) {
         //console.log('Row data: ' + JSON.stringify(data, null, 2));
-        let mainTable = $('#directionsText');
+        let mainTableBody = $('#directionsTextBody');
         let newRow = $("<tr>");
         newRow.attr({
             class: "directionsText-row",
@@ -426,15 +432,23 @@ const tableManager = {
 
         // FINDS THE NUMBER OF <th> TAGS IN THE TABLE HEADER AND USES THAT NUMBER 
         // TO CREATE CELLS IN EACH ROW
-        let tableCellNum = $("#directions-header-row").children().length;
+        let tableCellNum = $("#directions-header-row").find(".directions-header").length;
+
+        let testOutput = $("#directions-header-row").html()
+
+        //console.log("the array of table header children is: " )
+        //console.log(testOutput)
+        //console.log("Number of children in header row: " + tableCellNum)
         //console.log(tableCellNum)
 
         for (let i = 0; i < tableCellNum; i++) {
             let newCell = this.createCell(data, j, i);
+            console.log("Created new cell")
             newRow.append(newCell);
+            console.log("Appending new cell")
         }
 
-        mainTable.append(newRow)
+        mainTableBody.append(newRow)
 
     },
     // CREATES A CELL FOR THE TABLE
@@ -568,7 +582,7 @@ const tableManager = {
 
     },
     clearTable: function () {
-        $('#directionsText').empty();
+        $('#directionsTextBody').empty();
     },
     logHeaders: function () {
         let tableHeaders = $("#directions-header-row").children();
@@ -614,7 +628,7 @@ const tableManager = {
 
         location.number = i;
 
-        location.marker = true;
+        location.marker = false;
 
         return location;
     }
