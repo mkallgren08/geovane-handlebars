@@ -5,14 +5,25 @@
     <nav class="navbar banner navbar-default header navbar-static-top">
       <h1>WELCOME TO GEOVANE!</h1>
       <div class="nav nav-tabs">
-        <span class="{{#if homepage}}{{homepage}}{{/if}} nav-label">
+        <span class="nav-label">
           <a href="/" class="nav-label-txt">Home</a>
         </span>
-        <span class="{{#if contact}}{{contact}}{{/if}} nav-label">
-          <a href="/contact" class="nav-label-txt">Report a Bug</a>
+        <span class="nav-label">
+          <button>
+            Clear Local Storage <span class = "glyphicon glyphicon-info-sign"></span>
+          </button>
+           
         </span>
       </div>
     </nav>
+
+    <h2 style= "color:red;">
+      Note: the total time and distance are response.legs[0].time.text
+      and response.legs[0].distance.text respectively. For metric distance, switch
+      the "distance.text" with "distance.value" to get the meters. "time.value" gives 
+      you the total seconds of the trip.
+
+    </h2>
     <!--  End navbar -->
     {{!-- </div>
 </div> --}}

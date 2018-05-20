@@ -56,22 +56,17 @@ function setAllAutoComs() {
     let input2 = setAutoComplete("reend");
 };
 
-function setGeovaneLocalStorage(start, end) {
+function setGeovaneLocalStorage(start, end, method) {
     localStorage.setItem("geovane-start", start)
     localStorage.setItem("geovane-end", end)
+    localStorage.setItem("geovane-method", method)
     console.log(localStorage)
 }
 
 
 function initMap() {
     setAllAutoComs();
-    let storedStart = localStorage.getItem("geovane-start");
-    let storedEnd = localStorage.getItem("geovane-end");
 
-    if (storedStart && storedEnd) {
-        $('#restart').val(storedStart);
-        $('#reend').val(storedEnd);
-    };
     //console.log(selectedMode);
 
     // THE MAP IS THE FIRST THING THAT NEEDS TO BE INITIALIZED
@@ -88,6 +83,19 @@ function initMap() {
         // SETS THE DIRECTIONS DISPLAY TO THE PAGE'S MAP
         map: map
     });
+
+
+    let storedStart = localStorage.getItem("geovane-start");
+    let storedEnd = localStorage.getItem("geovane-end");
+    let storedMethod = localStorage.getItem("geovane-method");
+
+    if (storedStart && storedEnd && storedMethod) {
+        $('#restart').val(storedStart);
+        $('#reend').val(storedEnd);
+        $('#mode').val(storedMethod)
+        calculateAndDisplayRoute(directionsService, directionsDisplay, storedMethod, storedStart, storedEnd, map)
+    };
+
     let selectedMode = $('#mode').val();
     let mapOrigin;
     let startPoint = document.getElementById('restart').value;
@@ -118,6 +126,8 @@ function initMap() {
             routeEnd = reEnd
         }
 
+        setGeovaneLocalStorage(routeStart, routeEnd, selectedMode);
+
         calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map);
     };
 
@@ -136,7 +146,7 @@ function initMap() {
     $('#reroute').on('click', function () {
         //we call onvalChange here to grab the auto-completed values located in the input boxes.
         onvalChange();
-        setGeovaneLocalStorage(reStart, reEnd);
+        setGeovaneLocalStorage(reStart, reEnd, selectedMode);
         calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map);
     });
 }
@@ -217,7 +227,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             for (var i = 0; i < steps.length; i++) {
                 //console.log("Step for directions: " + JSON.stringify(steps[i], null, 2));
                 // PRINTS OUT A TABLE OF RESULTS
-                console.log("Should be creating new rows here")
+                //console.log("Should be creating new rows here")
                 tableManager.createRow(steps[i], i)
 
 
@@ -443,9 +453,9 @@ const tableManager = {
 
         for (let i = 0; i < tableCellNum; i++) {
             let newCell = this.createCell(data, j, i);
-            console.log("Created new cell")
+            //console.log("Created new cell")
             newRow.append(newCell);
-            console.log("Appending new cell")
+            //console.log("Appending new cell")
         }
 
         mainTableBody.append(newRow)
