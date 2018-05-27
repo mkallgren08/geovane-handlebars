@@ -56,10 +56,11 @@ function setAllAutoComs() {
     let input2 = setAutoComplete("reend");
 };
 
-function setGeovaneLocalStorage(start, end, method) {
+function setGeovaneLocalStorage(start, end, method, forecast) {
     localStorage.setItem("geovane-start", start)
     localStorage.setItem("geovane-end", end)
     localStorage.setItem("geovane-method", method)
+    localStorage.setItem("geovane-forecast", forecast)
     console.log(localStorage)
 }
 
@@ -88,12 +89,14 @@ function initMap() {
     let storedStart = localStorage.getItem("geovane-start");
     let storedEnd = localStorage.getItem("geovane-end");
     let storedMethod = localStorage.getItem("geovane-method");
+    let storedForecastReq = localStorage.getItem("geovane-forecast")
 
-    if (storedStart && storedEnd && storedMethod) {
+    if (storedStart && storedEnd && storedMethod && storedForecastReq) {
         $('#restart').val(storedStart);
         $('#reend').val(storedEnd);
         $('#mode').val(storedMethod)
-        calculateAndDisplayRoute(directionsService, directionsDisplay, storedMethod, storedStart, storedEnd, map)
+        $('#forecastOptions').prop('checked', storedForecastReq)
+        calculateAndDisplayRoute(directionsService, directionsDisplay, storedMethod, storedStart, storedEnd, map, storedForecastReq)
     };
 
     let selectedMode = $('#mode').val();
@@ -104,7 +107,8 @@ function initMap() {
     let routeStart = startPoint;
     let routeEnd = endPoint;
 
-
+    let forecastReq = $('#forecastOption').prop('checked')
+    console.log("Forecast Request?: " +  forecastReq)
 
 
 
@@ -114,7 +118,7 @@ function initMap() {
     // calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map)
 
     var onChangeHandler = function () {
-        var selectedMode = $('#mode').val();
+        selectedMode = $('#mode').val();
         if (reStart === "") {
             routeStart = legs.start_address
         } else {
@@ -126,9 +130,9 @@ function initMap() {
             routeEnd = reEnd
         }
 
-        setGeovaneLocalStorage(routeStart, routeEnd, selectedMode);
+        setGeovaneLocalStorage(routeStart, routeEnd, selectedMode, forecastReq);
 
-        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map);
+        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, routeStart, routeEnd, map, forecastReq);
     };
 
     var onvalChange = function () {
@@ -136,28 +140,35 @@ function initMap() {
         console.log(reStart)
         reEnd = document.getElementById('reend').value;
         console.log(reEnd)
+        forecastReq  = $('input[type=checkbox]').prop('checked')
+        console.log(forecastReq)
+        selectedMode = $('#mode').val();
+
 
     }
 
     document.getElementById('restart').addEventListener('change', onvalChange);
     document.getElementById('reend').addEventListener('change', onvalChange);
-    document.getElementById('mode').addEventListener('change', onChangeHandler);
+    document.getElementById('forecastOption').addEventListener('change', onvalChange);
+    //document.getElementById('mode').addEventListener('change', onChangeHandler);
+    document.getElementById('mode').addEventListener('change', onvalChange);
 
     $('#reroute').on('click', function () {
         //we call onvalChange here to grab the auto-completed values located in the input boxes.
         onvalChange();
-        setGeovaneLocalStorage(reStart, reEnd, selectedMode);
-        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map);
+        setGeovaneLocalStorage(reStart, reEnd, selectedMode, forecastReq);
+        calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, reStart, reEnd, map, forecastReq);
     });
 }
 // array of markers for the map
 let markers = [];
 let weatherInfo = [];
 
-function calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, start, end, map) {
+function calculateAndDisplayRoute(directionsService, directionsDisplay, selectedMode, start, end, map, forecast) {
     console.log('SelectedMode: ' + selectedMode);
     console.log('Start: ' + start);
     console.log('End: ' + end)
+    console.log("Is the forecast request being passed in?: " + forecast);
 
     //------------------------------------------------
     // creates an array of locations for weather calls
@@ -211,7 +222,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
             // TAKES THE DIRECTIONS FROM THE DIRECTIONS SERVICE AND SETS THEM TO A GOOGLE MAPS OBJECT
             directionsDisplay.setDirections(response);
-            console.log(response)
+            //console.log(response)
 
             // THIS STEP STARTS TO PULL THE DATA FROM THE RESPONSE AND PASS IT TO THE DOM FOR USER DISPLAY
             let steps = response.routes[0].legs[0].steps;
@@ -224,24 +235,32 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
             //CLEARS THE TABLE OF DIRECTIONS
             tableManager.clearTable();
 
+            //CREATES A RUNNING TOTAL OF THE TRIP'S ANTIPICATED TIME IN SECONDS (FOR GETTING CURRENT WEATHER VS A FORECAST)
+            var totalTime = 0;
+
+
             for (var i = 0; i < steps.length; i++) {
                 //console.log("Step for directions: " + JSON.stringify(steps[i], null, 2));
                 // PRINTS OUT A TABLE OF RESULTS
                 //console.log("Should be creating new rows here")
                 tableManager.createRow(steps[i], i)
 
+                //ADD THE STEPS' TIME TO THE TOTALTIME VALUE
+                totalTime += steps[i].duration.value
+                //console.log(totalTime)
+
 
                 // THESE SUB-STEPS ASSEMBLE AN ARRAY OF GEOGRAPHICAL COORDINATES TO SEND TO OPENWEATHERMAPS TO GET WEATHER DATA
                 // GETS THE COORDINATES AT THE STARTING LOCATION
                 if (i === 0) {
-                    let location = tableManager.makeMarkedLocation(i, steps)
+                    let location = tableManager.makeMarkedLocation(i, steps, totalTime)
                     locations.push(location)
                 }
 
                 // GETS THE COORDINATES AT THE END LOCATION
                 let endStep = steps.length - 1;
                 if (i === endStep) {
-                    let location = tableManager.makeMarkedLocation(i, steps)
+                    let location = tableManager.makeMarkedLocation(i, steps, totalTime)
                     locations.push(location)
                 }
 
@@ -276,26 +295,27 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                     midpoint.lng = lngm;
                     midpoint.number = i
                     midpoint.marker = true;
+                    midpoint.time = totalTime
 
                     locations.push(midpoint)
                 }
 
                 // GETS THE LOCATION FOR A STEP WHOSE DISTANcE IS GREATER THAN 10 KM (6.21 MILES)
                 else if (steps[i].distance.value > 10000 && i !== (steps.length - 1)) {
-                    let location = tableManager.makeMarkedLocation(i, steps)
+                    let location = tableManager.makeMarkedLocation(i, steps, totalTime)
                     locations.push(location)
                 } else {
-                    let location = tableManager.makeUnMarkedLocation(i, steps)
+                    let location = tableManager.makeUnMarkedLocation(i, steps, totalTime)
                     locations.push(location)
                 };
             };
 
-            console.log(locations)
+            // console.log(locations)
 
             //TAKES THE LOCATIONS ARRAY CONSTRUCTED IN THE PREVIOUS STEP AND MAKES 
             // WEATHER CALLS FOR ITEMS IN THE ARRAY
             for (var j = 0; j < locations.length; j++) {
-                weatherMapsAPICall(locations[j], map)
+                weatherMapsAPICall(locations[j], map, forecast)
             }
         } else {
             // LOGS AN ERROR IF NO VALID DIRECTIONS WERE FOUND - CURRENTLY AN ALERT, WILL BE CHANGED TO A MODAL POP-UP
@@ -353,10 +373,10 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 //console.log(markers[i].map)
             }
             console.log("Old markers should all disappear here")
-            console.log("Markers: " + markers)
+            //console.log("Markers: " + markers)
             console.log("Now clearing the marker array")
             markers = [];
-            console.log("Markers: " + markers)
+            //console.log("Markers: " + markers)
         }
 
         // Removes the markers from the map, but keeps them in the array.
@@ -380,21 +400,34 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
         //     WEATHER RENDERING FUNCTIONS
         // ====================================
 
-        function weatherMapsAPICall(location, map) {
+        function weatherMapsAPICall(location, map, forecast) {
+            //console.log("Did the user request a forecast?: " + forecast);
             //var cityName = $("#startLocation").val().trim();
             // var latitude = $("#startLat").val().trim();
             let latitude = location.lat;
             let longitude = location.lng
 
-            console.log('Weather API call launched')
+            //console.log('Weather API call launched')
 
             var APIKey = "f29cdafe21624061235bd7d34ec68e05";
 
             var stepDistances = []
 
-            var queryURL = "https://api.openweathermap.org/data/2.5/weather?appid=" + APIKey +
+            var weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=" + APIKey +
                 "&lat=" + latitude + "&lon=" + longitude;
 
+            var forecastURL = "https://api.openweathermap.org/data/2.5/forecast?appid=" + APIKey +
+            "&lat=" + latitude + "&lon=" + longitude;
+
+            var queryURL = '';
+
+            if (forecast === true) {
+                queryURL = forecastURL
+                //console.log("THE QUERY URL USED WAS: FORECAST")
+            } else {
+                queryURL = weatherURL
+                //console.log("THE QUERY URL USED WAS: WEATHER")
+            }
 
             $.ajax({
                 url: queryURL,
@@ -409,7 +442,20 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
                 //console.log(typeof location.lat)
                 //console.log(location);
 
-                console.log(location)
+                //====================================================================================//
+                // NOTES ON USING OPENWEATHERMAPS' FORECAST API
+                // 1) THE TIMES ARE MEANINGLESS AS  FAR AS I CAN TELL - THEY'RE RELATIVE TO THE TIME THE
+                //    ORIGINAL CALL WAS MADE
+                // 2) BECAUSE OF POINT 1, THIS IS THE BREAKDOWN (AS FAR I CAN TELL) OF HOW THE FORECAST 
+                //    WORKS:
+                //      A) response.list[0].weather[0]  -CONTAINS CURRENT WEATHER DATA
+                //      B) response.list[1].weather[1]  -CONTAINS WEATHER FORECAST IN 3 HOURS
+                //      C) response.list[2].weather[2]  -CONTAINS WEATHER FORECAST IN 6 HOURS
+                //      D) etc etc etc
+                
+                //====================================================================================//
+                
+                //console.log(location)
 
                 if (location.marker === true) {
                     addWeatherMarkers(response, map, location)
@@ -429,220 +475,7 @@ function calculateAndDisplayRoute(directionsService, directionsDisplay, selected
 
 };
 
-const tableManager = {
-    // CREATES A ROW FOR THE TABLE
-    createRow: function (data, j) {
-        //console.log('Row data: ' + JSON.stringify(data, null, 2));
-        let mainTableBody = $('#directionsTextBody');
-        let newRow = $("<tr>");
-        newRow.attr({
-            class: "directionsText-row",
-            id: "row" + j
-        });
 
-        // FINDS THE NUMBER OF <th> TAGS IN THE TABLE HEADER AND USES THAT NUMBER 
-        // TO CREATE CELLS IN EACH ROW
-        let tableCellNum = $("#directions-header-row").find(".directions-header").length;
-
-        let testOutput = $("#directions-header-row").html()
-
-        //console.log("the array of table header children is: " )
-        //console.log(testOutput)
-        //console.log("Number of children in header row: " + tableCellNum)
-        //console.log(tableCellNum)
-
-        for (let i = 0; i < tableCellNum; i++) {
-            let newCell = this.createCell(data, j, i);
-            //console.log("Created new cell")
-            newRow.append(newCell);
-            //console.log("Appending new cell")
-        }
-
-        mainTableBody.append(newRow)
-
-    },
-    // CREATES A CELL FOR THE TABLE
-    createCell: function (data, j, i) {
-        //console.log("Cell data: " + JSON.stringify(data, null, 2));
-        let newCell = $('<td>');
-        newCell.attr({
-            class: "directionsText-cell",
-        });
-
-        let text = $("<p>");
-
-        // Checks if data is found
-        if (!data) {
-            text.text("Data not found!")
-            newCell.append(text)
-            return newCell
-        } else {
-            switch (i) {
-                // Set the directions
-                case 0:
-                    newCell.attr({
-                        id: "row" + j + "-directions",
-                    });
-
-                    text.html(data.instructions)
-                    newCell.append(text)
-
-                    break;
-
-                // Set the distance (km) - add a miles version in the future
-                case 1:
-                    newCell.attr({
-                        id: "row" + j + "-distance",
-                    });
-
-                    text.text(data.distance.text)
-                    newCell.append(text)
-
-                    break;
-
-                // Sets the intial weather (blank at first!)
-                case 2:
-                    newCell.attr({
-                        id: "row" + j + "-weather",
-                        class: "empty-weather"
-                    });
-
-                    //adds a loading symbol
-                    newCell.append(this.insertLoadIcon())
-
-                    break;
-                // Sets the intial weather icon (blank at first!)
-                case 3:
-                    newCell.attr({
-                        id: "row" + j + "-weatherIcon",
-                        class: "empty-weatherIcon"
-                    });
-
-                    //adds a loading symbol
-                    newCell.append(this.insertLoadIcon())
-
-                    break;
-                // Time display
-                case 4:
-                    newCell.attr({
-                        id: "row" + j + "-time",
-                    });
-
-                    text.text(data.duration.text)
-                    newCell.append(text)
-
-                    break;
-                case 5:
-                    newCell.attr({
-                        id: "row" + j + "-totalTime",
-                    });
-
-                    text.text("filler")
-                    newCell.append(text)
-
-                    break;
-            }
-            return newCell
-        }
-    },
-    updateCell: function (targetRow, targetCell, data) {
-
-
-
-    },
-    updateWeatherCells: function (targetRow, data) {
-        //console.log("Weather Results: " + JSON.stringify(data,null,2))
-        console.log("Target row: " + targetRow)
-
-        //UPDATE THE WEATHER CELL
-        let weatherCellID = "#" + targetRow + "-weather"
-        let weatherIconCellID = "#" + targetRow + "-weatherIcon"
-
-        let Cell1 = $(weatherCellID);
-        Cell1.empty();
-        if (Cell1.attr('class') === "full-weather") {
-            Cell1.switchClass('full-weather', 'empty-weather')
-        };
-
-        let forecast = data.weather[0].main
-        Cell1.text(forecast)
-        Cell1.switchClass('empty-weather', 'full-weather')
-
-        //ADD A WEATHER ICON
-        let Cell2 = $(weatherIconCellID)
-        Cell2.empty();
-        if (Cell2.attr('class') === "full-weatherIcon") {
-            Cell2.switchClass('full-weatherIcon', 'empty-weatherIcon')
-        };
-
-
-        let iconcode = data.weather[0].icon
-        let iconURL = "http://openweathermap.org/img/w/" + iconcode + ".png"
-
-        let newIcon = $("<img>");
-        newIcon.attr({
-            src: iconURL,
-            alt: data.weather[0].description
-        });
-
-        Cell2.append(newIcon);
-        Cell2.switchClass('empty-weatherIcon', 'full-weatherIcon');
-
-
-
-    },
-    clearTable: function () {
-        $('#directionsTextBody').empty();
-    },
-    logHeaders: function () {
-        let tableHeaders = $("#directions-header-row").children();
-
-        console.log("tableHeaders: " + JSON.stringify(tableHeaders, null, 2));
-    },
-    insertLoadIcon: function () {
-        let img = $('<img>');
-        img.attr({
-            alt: "Loading icon",
-            src: "./assets/images/loading-icon.gif",
-            style: "width: 30px; height: 30px",
-            class: "loading-icon"
-        });
-
-        return img;
-    },
-    makeMarkedLocation: function (i, steps) {
-        let location = {};
-        let lat = steps[i].start_location.lat()
-        //console.log(lat)
-        location.lat = lat;
-
-        let lng = steps[i].start_location.lng()
-        //console.log(lng)
-        location.lng = lng;
-
-        location.number = i;
-
-        location.marker = true;
-
-        return location;
-    },
-    makeUnMarkedLocation: function (i, steps) {
-        let location = {};
-        let lat = steps[i].start_location.lat()
-        //console.log(lat)
-        location.lat = lat;
-
-        let lng = steps[i].start_location.lng()
-        //console.log(lng)
-        location.lng = lng;
-
-        location.number = i;
-
-        location.marker = false;
-
-        return location;
-    }
-}
 
 function setAutoComplete(htmlID) {
     // NOTE: We have to use document.getElementByID instead of jQuery's $.() method because

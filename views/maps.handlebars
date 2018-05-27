@@ -16,6 +16,7 @@
     <b>End: </b>
     <input type="text" id="reend" placeholder="Ending Location">
     <button id="reroute">Submit</button>
+    <input id = "forecastOption" type="checkbox" name="forecastOption" value="forecast"> Include forecast? (Min 3 hr trip)
 </div>
 <div id="map" style="height:500px; widows: 1em;" ></div>
 <br>
@@ -31,7 +32,9 @@
     console.log(passedData)
     console.log(passedData.directions.routes[0].legs)
 </script> --}}
-<script src="./mapDisplay.js"></script>
+<script src="./assets/js/tableManager.js"></script>
+<script src="./assets/js/mapDisplay.js"></script>
+{{!-- <script src="./mapDisplay.js"></script> --}}
 
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACJfX_uzwAE9msrtK1TbDz8aN9JY18zBo&callback=initMap&libraries=places">
 </script>
